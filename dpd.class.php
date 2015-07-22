@@ -19,21 +19,40 @@
 	class DPD{
 
 		public $client;
+		public $Logs = 'SOAP-Logs/';
 
 		public function __construct(){
 			$this->client = new SoapClient(__wsdl__,array('features' => SOAP_SINGLE_ELEMENT_ARRAYS));
 		}
 
-		public function code($result){
-			$aRes = get_object_vars($result);
-			echo '<h4>'.$aRes['Method'].'</h4>';
+
+		/**
+			* Metoda ma za zadanie wyświetlić strukturę obiektu
+		*/
+
+		public function DebugCode($result){
+			$aRes = @get_object_vars($result);
+			echo '<h4>'.(isset($aRes['Method']) ? $aRes['Method'] : 'Result' ).'</h4>';
 			echo '<hr />';
 			echo '<pre>';print_r($result);echo '</pre>';
 			echo '<hr />';
 		}
 
 
+		/**
+			* Metoda ma za zadanie stworzyć ostatnio wysłany plik XML, który zapisuje w formie loga w przypadku błędnej walidacji zapytania
+				* @param string -> string w formacie xml uzyskany podczas wywołania metody SOAP : __getLastRequest()
+				* @return plik xml zapisany w folderze SOAP-Logs
+		*/
 
+		public function DegugLogs($string){
+			$xml = simplexml_load_string($string);
+			$dom = new DOMDocument('1.0'); 
+			$dom->preserveWhiteSpace = false; 
+			$dom->formatOutput = true; 
+			$dom->loadXML($xml->asXML()); 
+			$dom->save($this->Logs.date("Y-m-d H:i:s").'.xml');
+		}
 
 
 		/**
