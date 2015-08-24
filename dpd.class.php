@@ -1,17 +1,32 @@
 <?php
 /******************************************************************************\
 *																			   *
-* Version:  1.00 BETA                                                          *
+* Version:  1.1 BETA                                                           *
 * Date:     2014-12-30                                                         *
 * Author:   OSKAR LEBUDA                                                       *
 * License:  Freeware                                                           *
 *                                                                              *
 \******************************************************************************/
 
+/******************************************************************************\
+*																			   *
+*		changelog:				                                               *
+*		v 1.1:																   *
+*																			   *
+*			-Dodana metoda checkPackageStatus pozwalająca na 				   *
+*			sprawdzenie statusu Paczki 										   *
+*																			   *
+*			-Dodana metoda Logs pozwalająca na generowanie					   *
+*			loga z ostatniego zapytania SOAP 								   *
+*                                                                              *
+\******************************************************************************/
+
+
+
 /**
 	* klasa do obsługi webserwisu DPD - Objektowo
-	* @author Oskar Lebuda
-	* @version 1.00 BETA
+	* @author Oskar Lebuda (o.lebuda@gmail.com)
+	* @version 1.1 BETA
 */
 
 	
@@ -19,12 +34,13 @@
 	class DPD{
 
 		public $client;
+		public $dClient;
 		public $Logs = 'SOAP-Logs/';
 
 		public function __construct(){
 			$this->client = new SoapClient(__wsdl__,array('features' => SOAP_SINGLE_ELEMENT_ARRAYS));
+			$this->dClient = new SoapClient('https://ucsweb.dpd.com.pl/UnisoftCustomerServices/Parcel.asmx?WSDL',array('features' => SOAP_SINGLE_ELEMENT_ARRAYS));
 		}
-
 
 		/**
 			* Metoda ma za zadanie wyświetlić strukturę obiektu
@@ -34,9 +50,12 @@
 			$aRes = @get_object_vars($result);
 			echo '<h4>'.(isset($aRes['Method']) ? $aRes['Method'] : 'Result' ).'</h4>';
 			echo '<hr />';
-			echo '<pre>';print_r($result);echo '</pre>';
+			echo '<xmp>';print_r($result);echo '</xmp>';
 			echo '<hr />';
 		}
+
+
+
 
 
 		/**
@@ -53,6 +72,7 @@
 			$dom->loadXML($xml->asXML()); 
 			$dom->save($this->Logs.date("Y-m-d H:i:s").'.xml');
 		}
+
 
 
 		/**
@@ -111,6 +131,7 @@
 				return $object;
 
 			}catch(SOAPFault $e){
+				$this->DegugLogs($client->__getLastRequest());
 				throw new Exception($e->getMessage(), 1);
 			}
 
@@ -165,6 +186,7 @@
 				return $object;
 
 			}catch(SOAPFault $e){
+				$this->DegugLogs($client->__getLastRequest());
 				throw new Exception($e->getMessage(), 1);
 			}
 		}
@@ -223,6 +245,7 @@
 				return $object;
 
 			}catch(SOAPFault $e){
+				$this->DegugLogs($client->__getLastRequest());
 				throw new Exception($e->getMessage(), 1);
 			}
 		}
@@ -284,6 +307,7 @@
 				return $object;
 
 			}catch(SOAPFault $e){
+				$this->DegugLogs($client->__getLastRequest());
 				throw new Exception($e->getMessage(), 1);
 			}
 
@@ -351,6 +375,7 @@
 				return $object;
 
 			}catch(SOAPFault $e){
+				$this->DegugLogs($client->__getLastRequest());
 				throw new Exception($e->getMessage(), 1);
 			}
 		}
@@ -400,9 +425,74 @@
 				return $object;
 
 			}catch(SOAPFault $e){
+				$this->DegugLogs($client->__getLastRequest());
 				throw new Exception($e->getMessage(), 1);
 			}
 
+		}
+
+
+
+
+		/**
+			* Metoda ma za zadanie sprawdzić status paczki 
+				* @param pWybill - identyfikator paczki, wygenerowany za pomocą metody generatePackagesNumbersV1
+				* @return objekt z Nazwą Metody oraz tablicą wszystkich statusów paczki
+				* UWAGA do tej metody wymagany jest dodatkowy login i hasło użytkownika, wygenerowane ściśle przez serwis DPD.
+				* w celu uzyskania dostępu do modułu checkDelivery, pozwalającena na korzystanie z tej metody należy skontaktować się z działem handlowym DPD
+		*/
+
+		public function checkPackageStatus($pWybill)
+		{
+			if (!trim($pWybill)) {
+				throw new Exception("Brak wymaganych paranetrów lub błędny numer paczki...", 1);
+			}
+
+			$params = [
+				'User' 	=> __userDelivery__, 
+				'Password' => __passwordDelivery__,
+				'ParcelNumber' => $pWybill,
+			];
+			try {
+				$oResult = $this->dClient->__soapCall('ParcelInfo', array($params));
+				
+				$oXML = new SimpleXMLElement($oResult->ParcelInfoResult->any);
+
+				$object = new stdClass();
+				$object->Method = 'checkPackageStatus';
+				$object->PackageNumber = $this->GetStatusAttribut($oXML, 'NumerListu');
+				$object->Status = [];
+
+				foreach ($oXML->Zdarzenie as $k => $v) {
+					$object->Status[] = [
+						'DataZdarzenia' => ($this->GetStatusAttribut($v, 'Czas')),
+						'InformacjaZdarzenia' => ($this->GetStatusAttribut($v, 'Nazwisko')),
+						'OpisZdarzenia' => ($this->GetStatusAttribut($v, 'Opis')),
+					];
+				}
+
+				return $object;
+
+			} catch (Exception $e) {
+				$this->DegugLogs($client->__getLastRequest());
+				throw new Exception($e->getMessage(), 1);
+			}
+			
+		}
+
+		/**
+			* Metoda na potrzeby metody checkPackageStatus, pozwalająca wyciągnąć atrybut z oXML otrzymanego w działaniu SOAP
+				* @param oXML - XML object, Attrib - wyciągany atrybut
+				* @return string wyciągana wartość atrybutu
+		*/
+
+		private function GetStatusAttribut($oXML, $Attrib)
+		{
+			if(isset($oXML[$Attrib])){
+				return (string) $oXML[$Attrib];
+			}else{
+				return (string)'Brak informacji.';
+			}
 		}
 	}
 
