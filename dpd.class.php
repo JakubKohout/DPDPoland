@@ -2,7 +2,8 @@
 /******************************************************************************\
 *																			   *
 * Version:  1.1 BETA                                                           *
-* Date:     2014-12-30                                                         *
+* CreateDate:   2014-12-30                                                     *
+* UpdateDate:   2015-08-25                                                     *
 * Author:   OSKAR LEBUDA                                                       *
 * License:  Freeware                                                           *
 *                                                                              *
@@ -455,7 +456,7 @@
 			];
 			try {
 				$oResult = $this->dClient->__soapCall('ParcelInfo', array($params));
-				
+
 				$oXML = new SimpleXMLElement($oResult->ParcelInfoResult->any);
 
 				$object = new stdClass();
