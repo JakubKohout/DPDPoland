@@ -1,6 +1,6 @@
 <?php
 /******************************************************************************\
-*																			   *
+*                                                                              *
 * Version:  1.1 BETA                                                           *
 * CreateDate:   2014-12-30                                                     *
 * UpdateDate:   2015-08-25                                                     *
@@ -10,15 +10,14 @@
 \******************************************************************************/
 
 /******************************************************************************\
-*																			   *
-*		changelog:				                                               *
-*		v 1.1:																   *
-*																			   *
-*			-Dodana metoda checkPackageStatus pozwalająca na 				   *
-*			sprawdzenie statusu Paczki 										   *
-*																			   *
-*			-Dodana metoda Logs pozwalająca na generowanie					   *
-*			loga z ostatniego zapytania SOAP 								   *
+*                                                                              *
+*       changelog:                                                             *
+*       v 1.1:                                                                 *
+*          -Dodana metoda checkPackageStatus pozwalająca na                    *
+*           sprawdzenie statusu Paczki                                         *
+*                                                                              *
+*          -Dodana metoda Logs pozwalająca na generowanie                      *
+*           loga z ostatniego zapytania SOAP                                   *
 *                                                                              *
 \******************************************************************************/
 
@@ -37,6 +36,10 @@
 		public $client;
 		public $dClient;
 		public $Logs = 'SOAP-Logs/';
+
+		/**
+			*Konstruktor klasy
+		*/
 
 		public function __construct(){
 			$this->client = new SoapClient(__wsdl__,array('features' => SOAP_SINGLE_ELEMENT_ARRAYS));
