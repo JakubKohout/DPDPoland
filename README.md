@@ -49,11 +49,18 @@ Przykładowe wywołanie:
 			'content'=>'Zawartość paczki 1',
 			'customerData1'=>'Proszę uważać',
 			'weight'=>'5',
+                        'sizeX' => '1',
+                        'sizeY' => '1',
+                        'sizeZ' => '1'
+                        
 		],
 		1=>[
 			'content'=>'Zawartość paczki 2',
 			'customerData1'=>'Szkło!',
 			'weight'=>'18',
+                        'sizeX' => '1',
+                        'sizeY' => '1',
+                        'sizeZ' => '1'
 		],
 	];
 
